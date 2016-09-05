@@ -1,24 +1,16 @@
-# README
+# Implementing Video Capture in Rails
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+### Getting started:
 
-Things you may want to cover:
+* download or clone the project
 
-* Ruby version
+* in your command line, move to the folder and type in:
+```
+bundle install
+```
 
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+* enter 
+```
+rails s
+```
+and visit localhost:3000
