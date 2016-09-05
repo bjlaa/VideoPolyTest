@@ -87,36 +87,56 @@ i.fa.fa-camera:hover {
   -ms-box-shadow: 0 1px 10px #D9D9D9;
   -o-box-shadow: 0 1px 10px #D9D9D9;
   box-shadow: 0 1px 10px #D9D9D9;
+  border-radius: 10px;
 }
+
+#camera-stream {
+  border-radius: 10px;
+}
+
+button:focus {
+  outline: 0;
+}
+
 .button-record {
   position: absolute;
-  background-color: #CD1212;
-  height: 100px;
-  width: 100px;
+  background-color: #dD1212;
+  height: 70px;
+  width: 70px;
   border-radius: 100%;
   border: 1px white solid;
-  transform: translate(-130px, 230px);
+  transform: translate(-100px, 280px);
+}
+.button-record:focus {
+  background-color: #bD1212;
 }
 .button-record:hover {
   cursor: pointer;
 }
 .button-stop {
+  animation: fromRecordToStop 0.2s forwards ease-in-out;
   display: none;
   @extend .button-record;
   border-radius: 15px;
   color: white;
 }
+.button-stop:focus {
+  background-color: #bD1212;
+}
 .button-cancel {
   position: absolute;
   color: black;
-  font-size: 30pt;
+  font-size: 20pt;
   font-family: Helvetica;
-  transform: translate(20px,-380px);
+  transform: translate(20px,-370px);
 }
 .button-cancel:hover {
   cursor: pointer;
   color: dimgray;
   transition: color 0.2s;
+}
+.button-cancel:active {
+  color: black;
 }
 
 #show-video-from-youtube {
@@ -125,7 +145,10 @@ i.fa.fa-camera:hover {
 }
 
 
-
+@keyframes fromRecordToStop {
+  0% {border-radius: 50%}
+  100%{border-radius: 5%}
+}
 
 
 

@@ -138,15 +138,6 @@ Video = React.createClass( {
             alert(message);
           }
         }.bind(this),
-        onProgress: function(data) {
-          var currentTime = Date.now();
-          var bytesUploaded = data.loaded;
-          var totalBytes = data.total;
-          // The times are in millis, so we need to divide by 1000 to get seconds.
-          var bytesPerSecond = bytesUploaded / ((currentTime - this.uploadStartTime) / 1000);
-          var estimatedSecondsRemaining = (totalBytes - bytesUploaded) / bytesPerSecond;
-          var percentageComplete = (bytesUploaded * 100) / totalBytes;
-        }.bind(this),
         onComplete: function(data) {
           console.log('Upload complete');
           var uploadResponse = JSON.parse(data);
@@ -341,7 +332,6 @@ Video = React.createClass( {
     this.refs.buttonCancel.style.display = 'none';
     this.refs.buttonRecord.style.display= 'none';
     this.refs.buttonStop.style.display= 'initial';
-    this.refs.cameraStream.style.outline = 'solid red 1px';
     var self = this;
 
     
@@ -386,7 +376,6 @@ Video = React.createClass( {
   stopRecording() {
     this.refs.cameraStream.controls = true;
     this.refs.buttonStop.style.display= 'none';
-    this.refs.cameraStream.style.outline = 'solid green 1px';
     this.refs.cameraStream.muted = false;
     this.refs.cameraStream.autoPlay = 'disabled';
 
