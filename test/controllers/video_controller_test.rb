@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class VideoComponentControllerTest < ActionDispatch::IntegrationTest
+class VideoControllerTest < ActionDispatch::IntegrationTest
   # test "the truth" do
   #   assert true
   # end
