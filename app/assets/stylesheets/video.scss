@@ -58,7 +58,7 @@ a {
   VideoRecorder component
 */
 
-i.fa.fa-video-camera {
+i.fa.fa-camera {
   display: block;
   margin-right: auto;
   margin-left: auto;
@@ -70,14 +70,14 @@ i.fa.fa-video-camera {
   border-radius: 10px;
   color: gray;
 }
-i.fa.fa-video-camera:hover {
+i.fa.fa-camera:hover {
   cursor: pointer;
-  background: #D2BCBC;
-  transition: background .5s ease-in-out;
+  background: lightgray;
+  transition: background .2s ease-in-out;
 }
 
 #video-container {
-  visibility: hidden;
+  display: none;
   margin: 2em auto 0;
   width: 500px;
   padding: 2em;
@@ -90,11 +90,11 @@ i.fa.fa-video-camera:hover {
 }
 .button-record {
   position: absolute;
-  background-color: red;
-  color: white;
+  background-color: #CD1212;
   height: 100px;
   width: 100px;
   border-radius: 100%;
+  border: 1px white solid;
   transform: translate(-130px, 230px);
 }
 .button-record:hover {
@@ -103,53 +103,25 @@ i.fa.fa-video-camera:hover {
 .button-stop {
   display: none;
   @extend .button-record;
-  border-radius: 0%;
+  border-radius: 15px;
   color: white;
-  background-color: black;
 }
 .button-cancel {
   position: absolute;
-  color: white;
-  font-size: 40pt;
-  font-family: Arial;
+  color: black;
+  font-size: 30pt;
+  font-family: Helvetica;
   transform: translate(20px,-380px);
 }
 .button-cancel:hover {
   cursor: pointer;
-  color: lightgray;
+  color: dimgray;
   transition: color 0.2s;
 }
 
-
-#button-upload {
-  @extend .button-record;
-  border-color: green;
-  border-radius: 20%;
-  color: white;
-  background-color: green;
-  display: none;
-}
-
-.labels-upload {
-  font-family: Helvetica, Arial;
-  font-size: 12pt;
-}
-
-#title-upload {
-  width: 200px;
-  margin-left: auto;
-  margin-right: 100px;
-  display: block;
-}
-#description {
-  @extend #title-upload;
-}
-#privacy-status {
-  @extend #title-upload;
-}
-
 #show-video-from-youtube {
-  visibility:hidden;
+  @extend #video-container;
+  display: none;
 }
 
 

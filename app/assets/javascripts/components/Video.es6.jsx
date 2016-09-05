@@ -18,9 +18,9 @@ Video = React.createClass( {
       ],  
       stream: '',
       mediaConstraints: { video: true, audio: true },
-      titleVideo: '',
-      descVideo: '',
-      privacyVideo: '',
+      titleVideo: 'user_id+access_token',
+      descVideo: 'user_id+access_token',
+      privacyVideo: 'public',
       recordRTC: '',
       recordedBlob: '',
       uploadVideo: '',
@@ -45,13 +45,6 @@ Video = React.createClass( {
   saveUploadVideoSession(uploadVideo) {
     this.setState({uploadVideo: uploadVideo});
   },
-  saveVideoInfos(title, desc, privacy) {
-    this.setState({
-      titleVideo: title,
-      descVideo: desc,
-      privacyVideo: privacy
-    });
-  },
   saveRecordRTC(recordRTC) {
     this.setState({recordRTC: recordRTC});
   },
@@ -59,13 +52,17 @@ Video = React.createClass( {
     this.setState({recordedBlob: updatedBlob});
   },
   saveVideoId(videoId) {
-    console.log('called!', videoId);
     this.setState({videoId: videoId});
   },
   saveYoutubeUrl(videoId) {
     this.setState({
       youtubeVideoEmbed: 'https://www.youtube.com/embed/'+videoId,
       youtubeVideoUrl: 'https://www.youtube.com/watch?v='+videoId
+    });
+  },
+  updateStream(stream) {
+    this.setState({
+      stream: stream
     });
   },
 
@@ -107,7 +104,6 @@ Video = React.createClass( {
           if (response.error) {
             console.log(response.error.message);
           } else {
-            console.log('ready success');
           }
         }.bind(this)
       });     
@@ -143,7 +139,6 @@ Video = React.createClass( {
           }
         }.bind(this),
         onProgress: function(data) {
-          console.log('onprogress');
           var currentTime = Date.now();
           var bytesUploaded = data.loaded;
           var totalBytes = data.total;
@@ -153,7 +148,7 @@ Video = React.createClass( {
           var percentageComplete = (bytesUploaded * 100) / totalBytes;
         }.bind(this),
         onComplete: function(data) {
-          console.log('completed');
+          console.log('Upload complete');
           var uploadResponse = JSON.parse(data);
           this.videoId = uploadResponse.id;
 
@@ -161,21 +156,50 @@ Video = React.createClass( {
           // that allows us to stock our video ID in order
           // to display it afterwards
           var videoIdVar = this.videoId;
-          self.handleVideoId.bind(this, videoIdVar)();
+          self.handleVideoId.bind(null, videoIdVar)();
 
           // Hides upload video div and show our 
           // fetched youtube video
-          self.refs.video.style.visibility="hidden";
-          self.refs.youtubeVideo.style.visibility="visible";
-          self.cleanAfterUpload();
+
         }.bind(this)
       });
       this.uploadStartTime = Date.now();
-      uploader.upload();
+      uploader.upload(); 
+      
     }
+
     this.handleUploadClick = function() {
-      var video = document.getElementById('camera-stream');
-      this.uploadFile(self.state.recordedBlob);
+      if(self.state.recordedBlob) {
+        this.uploadFile(self.state.recordedBlob);
+      } else {
+        setTimeout(function() {
+          self.handleUploadTimeout();
+        }, 300);
+      }
+      
+    }
+  },
+  // This checks whether the access token is fetched and stored
+  // in our App state and calls the UploadVideo constructor
+  // passing it our access token. This sets up our app to be
+  // ready for uploading
+  createUploadClass() {
+    //This variable avoids having binding issue 
+    // regarding 'this' in UploadVideo()
+    var self = this;
+
+    if(this.state.accessToken != '') {
+      var UploadFunction = this.UploadVideo;
+      var accessToken = this.state.accessToken;
+
+      // This created a new session of our UploadVideo
+      // and saves it to our App state 
+      var uploadVideo = new UploadFunction(self);
+      self.saveUploadVideoSession(uploadVideo);
+
+      self.state.uploadVideo.ready(accessToken);    
+    } else {
+      setTimeout(this.createUploadClass, 100)
     }
   },
 
@@ -237,7 +261,6 @@ Video = React.createClass( {
     this.saveToken(accessToken);
 
     gapi.client.load('youtube', 'v3', function() {
-    console.log('youtube api loaded');
     });
     // After authentication is complete, we set up the future
     // upload
@@ -245,35 +268,6 @@ Video = React.createClass( {
   },
 
 
-
-
-  /*
-    Setting up the Future upload
-  */
-
-  // This checks whether the access token is fetched and stored
-  // in our App state and calls the UploadVideo constructor
-  // passing it our access token. This sets up our app to be
-  // ready for uploading
-  createUploadClass() {
-    //This variable avoids having binding issue 
-    // regarding 'this' in UploadVideo()
-    var self = this;
-
-    if(this.state.accessToken != '') {
-      var UploadFunction = this.UploadVideo;
-      var accessToken = this.state.accessToken;
-
-      // This created a new session of our UploadVideo
-      // and saves it to our App state 
-      var uploadVideo = new UploadFunction(self);
-      self.saveUploadVideoSession(uploadVideo);
-
-      self.state.uploadVideo.ready(accessToken);    
-    } else {
-      setTimeout(this.createUploadClass, 100)
-    }
-  },
 
   /*
     Starting the capture and rendering its stream to our video div
@@ -283,14 +277,16 @@ Video = React.createClass( {
   // This is called when the user clicks on the camera icon
   // starting the video capture by the device's camera/ microphone 
   renderVideo() {
-    this.refs.video.style.visibility = 'visible';
-    this.refs.record.style.display = 'none';
+    this.refs.video.style.display = 'block';
+    this.refs.recordIcon.style.display = 'none';
     this.captureVideoAudio();
   },
 
   // This method only turns on the device's camera and microphone
   // and transmit their stream 'localMediaStream' to our video div
   captureVideoAudio() {
+    this.refs.cameraStream.controls = false;
+    this.refs.buttonRecord.style.display= 'initial';
 
     this.refs.cameraStream.muted = true;
     navigator.getUserMedia = (navigator.getUserMedia ||
@@ -298,7 +294,6 @@ Video = React.createClass( {
                               navigator.mozGetUserMedia || 
                               navigator.msGetUserMedia);
     var self = this;
-    var stream = this.state.stream;
     if (navigator.getUserMedia) {
       // Request the camera.
       navigator.getUserMedia(
@@ -307,7 +302,6 @@ Video = React.createClass( {
 
         // Success Callback
         function(stream) {
-          console.log(stream);
           self.saveStreamData(stream);
 
           //Rendering video on screen part
@@ -318,7 +312,8 @@ Video = React.createClass( {
           // Create an object URL for the video stream and use this 
           // to set the video source.
           video.src = window.URL.createObjectURL(stream);
-          console.log(stream.getTracks());
+          self.updateStream(stream);
+          
         },
 
         // Error Callback
@@ -330,6 +325,7 @@ Video = React.createClass( {
 
     } else {
       alert('Sorry, your browser does not support getUserMedia');
+      this.refs.video.style.display = "none";
     }   
   },
 
@@ -342,12 +338,16 @@ Video = React.createClass( {
   // button: it gets the stream from 'localMediaStream' and 
   // stores it in our App state with saveRecordRTC
   recordVideo() {
+    this.refs.buttonCancel.style.display = 'none';
     this.refs.buttonRecord.style.display= 'none';
     this.refs.buttonStop.style.display= 'initial';
     this.refs.cameraStream.style.outline = 'solid red 1px';
     var self = this;
-    var stream = this.state.stream;
+
+    
+
     navigator.getUserMedia(
+
       // Constraints
       self.state.mediaConstraints,
 
@@ -357,19 +357,19 @@ Video = React.createClass( {
 
         // Get a reference to the video element on the page.
         var video = document.getElementById('camera-stream');
+        video.src = window.URL.createObjectURL(stream);
 
         var options = {
           mimeType: 'video/webm',
-          audioBitsPerSecond: 128000,
-          videoBitsPerSecond: 128000,
-          bitsPerSecond: 128000,
+          bitsPerSecond: 1200000,
           bufferSize: 16384,
           sampleRate: 96000
         };
         var recordRTC = RecordRTC(stream, options);
         self.saveRecordRTC(recordRTC);
         self.state.recordRTC.startRecording();
-        console.log('Recording started!');
+        self.stopVideoCapture();
+        self.updateStream(stream);
       },
 
       // Error Callback
@@ -384,20 +384,17 @@ Video = React.createClass( {
   // name and a date to convert it into a file that we can upload
   // on Youtube:  
   stopRecording() {
+    this.refs.cameraStream.controls = true;
     this.refs.buttonStop.style.display= 'none';
-    this.refs.buttonUpload.style.display = 'initial';
     this.refs.cameraStream.style.outline = 'solid green 1px';
     this.refs.cameraStream.muted = false;
     this.refs.cameraStream.autoPlay = 'disabled';
-    this.refs.cameraStream.controls = true;
+
     var video = document.getElementById('camera-stream');
     video.muted = false;
     
 
     var self = this;
-    var stream = this.state.stream;
-
-
 
     navigator.getUserMedia(
       // Constraints
@@ -429,10 +426,10 @@ Video = React.createClass( {
 
           //and then we push the newly created file back into 
           //our App state
-          self.updateRecordedBlob(recordedBlob);        
-          self.state.stream.stop();
+          self.updateRecordedBlob(recordedBlob);    
         });
         self.stopVideoCapture();
+        self.updateStream(stream);
       },
 
       // Error Callback
@@ -441,10 +438,9 @@ Video = React.createClass( {
         console.log('The following error occurred when trying to use getUserMedia: ' + err);
       }
     );
-  },
 
-  cleanAfterUpload() {
-    this.refs.buttonUpload.style.display = 'none';
+    this.handleUploadTimeout();
+    this.refs.buttonCancel.style.display = 'block';
   },
 
   /*
@@ -453,51 +449,26 @@ Video = React.createClass( {
 
   // This is called when the user clicks on the upload button
   // after having recorded a video
-  handleClick() {
+  handleUploadTimeout() {
     if(this.state.uploadVideo != '') {
       this.state.uploadVideo.handleUploadClick();
     } else {
-      setTimeout(this.handleClick, 100);
+      setTimeout(this.handleUploadTimeout, 100);
     }
-  },
-  // This allows us to save the video infos to our App state
-  // whenever the title, description or privacy status are
-  // modified
-  handleOnChange(event) {
-    var title = this.refs.titleVideo.value;
-    var desc = this.refs.descVideo.value;
-    var privacy = this.refs.privacyVideo.value;
-    this.saveVideoInfos.bind(this, title, desc, privacy)();
   },
 
   // Handles calling saveVideoId and 
   // checks whether video is available from youtube servers
 
   handleVideoId(videoId) {
-    console.log(videoId);
-    console.log('video id handled');
-    this.saveVideoId.bind(this, videoId)();
-    this.saveYoutubeUrl.bind(this, videoId)();
-    this.checkIfVideoUploaded();
+    this.saveVideoId.bind(null, videoId)();
+    this.saveYoutubeUrl.bind(null, videoId)();
   },
-  checkIfVideoUploaded() {
-    var self = this;
-    var video = self.state.youtubeVideoUrl;
-
-    fetch(video, {mode:'no-cors'})
-    .then(function(response) {
-      self.refs.youtubeFrame.src = self.state.youtubeVideoEmbed;
-    })
-    .catch(function(error) {
-      console.log(error.message);
-    })
-  },
-  // =======>>>>TODO: 
-  // This method is called whenever the user clicks on the cancel
-  // button
   
   cancelVideo() {
     this.stopVideoCapture();
+    this.refs.video.style.display = 'none';
+    this.refs.recordIcon.style.display = 'block';
   },
 
   stopVideoCapture() {
@@ -509,40 +480,18 @@ Video = React.createClass( {
   render() {
     return(
       <div>
-        <div ref='record' className='record'>
+        <div ref='recordIcon' className='record'>
           <div className='record-button-container'>
-            <i onClick={this.renderVideo} className="fa fa-video-camera" aria-hidden="true"></i>
+            <i onClick={this.renderVideo} className="fa fa-camera" aria-hidden="true"></i>
           </div>
         </div>          
         <div ref='video' id='video-container' >
           <video ref='cameraStream' id='camera-stream' width='1281px' autoPlay ></video>
-          <div onClick={this.cancelVideo} ref='' className='button-cancel'>x</div>
-          <button ref='buttonRecord'onClick={this.recordVideo} className='button-record'>Record</button>
-          <button ref='buttonStop' onClick={this.stopRecording} className='button-stop' >Stop</button>
-          <button ref='buttonUpload' onClick={this.handleClick} id='button-upload'>Upload Video</button>
-          <div ></div>
-          <div>
-            <label className='labels-upload' htmlFor="title-upload">Title:</label>
-            <input onChange={this.handleOnChange} ref='titleVideo' id="titleVideo" type="text" defaultValue=''/>
-          </div>
-          <div>
-            <label className='labels-upload' htmlFor="description">Description:</label>
-            <textarea onChange={this.handleOnChange} ref='descVideo' id='descVideo' defaultValue=''></textarea>
-          </div>
-          <div>
-            <label className='labels-upload' htmlFor="privacy-status">Privacy Status:</label>
-            <select onChange={this.handleOnChange} ref='privacyVideo' id='privacyVideo'>
-              <option>public</option>
-              <option>unlisted</option>
-              <option>private</option>
-            </select>
-          </div>          
-        </div>
-        <div ref='youtubeVideo' id='show-video-from-youtube'>
-          <iframe ref='youtubeFrame' width="420" height="315" src="" frameBorder="0" allowFullScreen></iframe>
-        </div>        
+          <div onClick={this.cancelVideo} ref='buttonCancel' className='button-cancel'>x</div>
+          <button ref='buttonRecord'onClick={this.recordVideo} className='button-record'></button>
+          <button ref='buttonStop' onClick={this.stopRecording} className='button-stop' ></button>        
+        </div>       
       </div>
-      
     )
   }
 } );
